@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { CustomValidatorPipe } from './exceptions/custom-validator-pipe';
 import { CustomExceptionFilter } from './exceptions/custom-exception-filter';
+import { MongooseExceptionFilter } from './exceptions/mongoose-exception-filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -22,7 +23,10 @@ async function bootstrap() {
     new CustomValidatorPipe({ transform: true, whitelist: true }),
   );
   const adatperHost = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new CustomExceptionFilter(adatperHost));
+  app.useGlobalFilters(
+    new MongooseExceptionFilter(adatperHost),
+    new CustomExceptionFilter(adatperHost),
+  );
 
   if (configService.get<string>('NODE_ENV') === 'dev') {
     const config = new DocumentBuilder()
