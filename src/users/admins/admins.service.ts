@@ -26,10 +26,11 @@ export class AdminsService {
       );
     }
     const password = this.codeGenerator
-      .builder()
+      .codeBuilder()
       .withType('ALPHANUMERIC')
       .withLength(12)
       .build();
+    this.logger.log(password);
     const createdAdmin = await this.adminRepository.create({
       ...createAdminDto,
       password,

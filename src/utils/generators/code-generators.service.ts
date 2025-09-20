@@ -4,8 +4,12 @@ import crypto from 'node:crypto';
 
 @Injectable()
 export class CodeGeneratorService {
-  builder() {
+  codeBuilder() {
     return new CodeBuilder();
+  }
+
+  csrfFactory() {
+    return new CSRFactory();
   }
 }
 
@@ -161,5 +165,28 @@ class CodeBuilder {
       return `${this.prefix}_${generatedCode}`;
     }
     return generatedCode;
+  }
+}
+
+class CSRFactory {
+  private randomBytes;
+  private randomUUID;
+  constructor() {
+    this.randomBytes = '';
+    this.randomUUID = '';
+  }
+
+  withRandomBytes(length: number, type: BufferEncoding) {
+    this.randomBytes = crypto.randomBytes(length).toString(type);
+    return this;
+  }
+
+  withRandomUUID() {
+    this.randomUUID = crypto.randomUUID();
+    return this;
+  }
+
+  build() {
+    return `${this.randomBytes}:${this.randomUUID}`;
   }
 }

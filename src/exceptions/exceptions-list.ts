@@ -22,4 +22,24 @@ export const EXCEPTIONS = {
     statusCode: HttpStatus.CONFLICT,
     message: 'Ressouce already exists',
   },
+  PASSWORD_INVALID: <Exception>{
+    type: 'PASSWORD_INVALID',
+    statusCode: HttpStatus.UNAUTHORIZED,
+    message: 'Password is invalid',
+  },
+  TOKEN_INVALID: <Exception>{
+    type: 'TOKEN_INVALID',
+    statusCode: HttpStatus.UNAUTHORIZED,
+    message: 'Token is invalid',
+  },
+  UNAUTHORIZED: <Exception>{
+    type: 'UNAUTHORIZED',
+    statusCode: HttpStatus.UNAUTHORIZED,
+    message: 'Unauthorized request',
+  },
+  USER_NOT_FOUND: <Exception>{
+    type: 'USER_NOT_FOUND',
+    statusCode: HttpStatus.NOT_FOUND,
+    message: 'User has not been found',
+  },
 };
