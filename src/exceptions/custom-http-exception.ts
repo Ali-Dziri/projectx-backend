@@ -1,23 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { EXCEPTIONS } from './exceptions-list';
-import { ErrorMessage, Exception } from 'src/common/types';
+import { ErrorMessage, Exception } from '@/common/types/exception-types';
 
 export class CustomHttpException extends HttpException {
   constructor(
-    exception: Exception<any>,
+    exception: Exception,
     message?: ErrorMessage,
-    data?: any,
     status?: HttpStatus,
   ) {
     if (message) exception.message = message;
-    if (status) exception.status = status;
-    if (data) exception.data = data;
-    super(exception.message, exception.status);
+    if (status) exception.statusCode = status;
+    super(exception.message, exception.statusCode);
   }
 
-  static createException(errorType: keyof typeof EXCEPTIONS) {
-    const exception = EXCEPTIONS[errorType];
+  static createException(type: keyof typeof EXCEPTIONS) {
+    const exception = EXCEPTIONS[type];
     return new CustomHttpException(exception);
   }
 }

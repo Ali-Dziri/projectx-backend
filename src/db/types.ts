@@ -1,14 +1,15 @@
-import { PopulateOptions, SortOrder } from 'mongoose';
+import { ClientSession, PopulateOptions, SortOrder } from 'mongoose';
 
-type Population = PopulateOptions | (PopulateOptions | string)[];
+type MongoosePopulateOptions = PopulateOptions | string[] | PopulateOptions[];
 
 export type Options = {
   sort?: { [key: string]: SortOrder };
   projection?: Record<string, unknown>;
-  populate?: Population;
+  populate?: MongoosePopulateOptions;
   skip?: number;
   limit?: number;
   lean?: boolean;
+  session?: ClientSession;
 };
 
 export type PaginationType<T> = {

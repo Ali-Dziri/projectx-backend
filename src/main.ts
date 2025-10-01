@@ -6,7 +6,9 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { CustomValidatorPipe } from './exceptions/custom-validator-pipe';
 import { CustomExceptionFilter } from './exceptions/custom-exception-filter';
+import { MongooseExceptionFilter } from './exceptions/mongoose-exception-filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -14,15 +16,22 @@ async function bootstrap() {
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get<number>('PORT');
   const apiVersion = configService.get<string>('API_VERSION');
-
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
   app.set('trust proxy', 1);
   app.setGlobalPrefix(`api/${apiVersion}`);
   app.use(helmet());
+  app.use(cookieParser());
   app.useGlobalPipes(
     new CustomValidatorPipe({ transform: true, whitelist: true }),
   );
   const adatperHost = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new CustomExceptionFilter(adatperHost));
+  app.useGlobalFilters(
+    new MongooseExceptionFilter(adatperHost),
+    new CustomExceptionFilter(adatperHost),
+  );
 
   if (configService.get<string>('NODE_ENV') === 'dev') {
     const config = new DocumentBuilder()

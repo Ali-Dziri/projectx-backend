@@ -1,13 +1,11 @@
 import { Logger } from '@nestjs/common';
 import {
   AggregateOptions,
-  ClientSession,
   Document,
   FilterQuery,
   Model,
   MongooseBulkWriteOptions,
   PipelineStage,
-  PopulateOptions,
   SaveOptions,
   UpdateQuery,
 } from 'mongoose';
@@ -19,96 +17,85 @@ export abstract class EntityRepository<T extends Document> {
   protected readonly logger = new Logger(EntityRepository.name);
   protected constructor(protected entityModel: Model<T>) {}
 
-  async findOne(filter: FilterQuery<T>, options?: Options) {
-    const { sort, projection, populate, limit } = options || {};
-    let query = this.entityModel.findOne(filter, {
-      ...projection,
-    });
-    if (sort) {
-      query = query.sort(sort);
-    }
-    if (limit) {
-      query = query.limit(limit);
-    }
-    if (populate) {
-      query.populate(populate);
-    }
+  async findOne(filter: FilterQuery<T>, options?: Options): Promise<T | null> {
+    const { sort, projection, populate, limit, lean, session } = options || {};
+    const query = this.entityModel.findOne(filter, projection);
+    if (sort) query.sort(sort);
+    if (limit) query.limit(limit);
+    if (populate) query.populate(populate);
+    if (lean) query.lean();
+    if (session) query.session(session);
     return query.exec();
   }
 
-  async find(filter: FilterQuery<T>, options?: Options) {
-    const { sort, projection, populate, skip, limit, lean } = options || {};
-    const query = this.entityModel.find(filter, { ...projection });
+  find(filter: FilterQuery<T>, options?: Options): Promise<T[]> {
+    const { sort, projection, populate, skip, limit, lean, session } =
+      options || {};
+    const query = this.entityModel.find(filter, projection);
     if (sort) query.sort(sort);
     if (populate) query.populate(populate);
     if (skip) query.skip(skip);
     if (limit) query.limit(limit);
     if (lean) query.lean();
+    if (session) query.session(session);
     return query.exec();
   }
 
-  async create(createEntityData: unknown, options?: SaveOptions) {
+  create(createEntityData: Partial<T> | T, options?: SaveOptions): Promise<T> {
     const entity = new this.entityModel(createEntityData);
     return entity.save(options);
   }
 
-  async updateOne(
+  updateOne(
     filter: FilterQuery<T>,
     updateEntityData: UpdateQuery<T>,
-    populate?: PopulateOptions,
-    session?: ClientSession,
+    options?: Options,
   ) {
     return this.entityModel.updateOne(filter, updateEntityData, {
-      populate,
-      session,
+      ...options,
     });
   }
 
-  async insertMany(entitiesData: unknown) {
+  insertMany(entitiesData: T[] | Partial<T>[] | unknown[]): Promise<T[]> {
     return this.entityModel.insertMany(entitiesData);
   }
 
-  async findOneAndUpdate(
+  findOneAndUpdate(
     filter: FilterQuery<T>,
     updateEntityData: UpdateQuery<T>,
-    populate?: PopulateOptions,
-    session?: ClientSession,
+    options?: Options,
   ) {
     return this.entityModel.findOneAndUpdate(filter, updateEntityData, {
       new: true,
-      populate,
-      session,
+      ...options,
     });
   }
 
-  async exists(filter: FilterQuery<T>) {
+  exists(filter: FilterQuery<T>) {
     return this.entityModel.exists(filter);
   }
 
-  async count(filter?: FilterQuery<T>) {
+  countDocuments(filter?: FilterQuery<T>) {
     return this.entityModel.countDocuments(filter);
   }
 
-  async deleteMany(filter?: FilterQuery<T>) {
+  deleteMany(filter?: FilterQuery<T>) {
     return this.entityModel.deleteMany(filter);
   }
 
-  async updateMany(
-    filter: FilterQuery<T> = {},
-    updateEntityData: UpdateQuery<T>,
-  ) {
+  updateMany(filter: FilterQuery<T> = {}, updateEntityData: UpdateQuery<T>) {
     return this.entityModel.updateMany(filter, updateEntityData);
   }
 
-  async findOneAndDelete(filter: FilterQuery<T>) {
+  findOneAndDelete(filter: FilterQuery<T>) {
     return this.entityModel.findOneAndDelete(filter, { new: true });
   }
 
-  async aggregate(pipeline: PipelineStage[], options?: AggregateOptions) {
+  aggregate(pipeline: PipelineStage[], options?: AggregateOptions) {
     return this.entityModel.aggregate(pipeline, options);
   }
 
-  async bulkWrite(ops: any[], options?: MongooseBulkWriteOptions) {
+  bulkWrite(ops: any[], options?: MongooseBulkWriteOptions) {
     return this.entityModel.bulkWrite(ops, options);
   }
 
@@ -169,7 +156,7 @@ export abstract class EntityRepository<T extends Document> {
       );
     }
   }
-  async deleteOne(filter?: FilterQuery<T>) {
+  deleteOne(filter?: FilterQuery<T>) {
     return this.entityModel.deleteOne(filter);
   }
 }
