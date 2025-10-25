@@ -11,7 +11,7 @@ export class CustomHttpException extends HttpException {
   ) {
     if (message) exception.message = message;
     if (status) exception.statusCode = status;
-    super(exception.message, exception.statusCode);
+    super(exception, exception.statusCode);
   }
 
   static createException(type: keyof typeof EXCEPTIONS) {

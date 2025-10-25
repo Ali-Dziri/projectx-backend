@@ -4,8 +4,8 @@ import crypto from 'node:crypto';
 
 @Injectable()
 export class CodeGeneratorService {
-  codeBuilder() {
-    return new CodeBuilder();
+  codeFactory() {
+    return new CodeFactory();
   }
 
   csrfFactory() {
@@ -13,7 +13,7 @@ export class CodeGeneratorService {
   }
 }
 
-class CodeBuilder {
+class CodeFactory {
   private length: number;
   private type: CodeTypes;
   private prefix?: string | null;
@@ -90,7 +90,7 @@ class CodeBuilder {
     'y',
     'z',
   ];
-  static alphanumeric = [...CodeBuilder.numbers, ...CodeBuilder.alphatics];
+  static alphanumeric = [...CodeFactory.numbers, ...CodeFactory.alphatics];
 
   constructor() {
     this.length = 10;
@@ -111,17 +111,17 @@ class CodeBuilder {
     return code;
   }
 
-  withLength(length: number): CodeBuilder {
+  withLength(length: number): CodeFactory {
     this.length = length;
     return this;
   }
 
-  withType(type: CodeTypes): CodeBuilder {
+  withType(type: CodeTypes): CodeFactory {
     this.type = type;
     return this;
   }
 
-  withPrefix(prefix: string): CodeBuilder {
+  withPrefix(prefix: string): CodeFactory {
     this.prefix = prefix;
     return this;
   }
@@ -130,33 +130,33 @@ class CodeBuilder {
     let generatedCode: string = '';
     switch (this.type) {
       case CodeTypes.NUMERIC:
-        generatedCode = CodeBuilder.generateCode(
+        generatedCode = CodeFactory.generateCode(
           this.length,
-          CodeBuilder.numbers,
+          CodeFactory.numbers,
         );
         break;
       case CodeTypes.ALPHANUMERIC:
-        generatedCode = CodeBuilder.generateCode(
+        generatedCode = CodeFactory.generateCode(
           this.length,
-          CodeBuilder.alphanumeric,
+          CodeFactory.alphanumeric,
         );
         break;
       case CodeTypes.HEX:
-        generatedCode = CodeBuilder.generateCode(
+        generatedCode = CodeFactory.generateCode(
           this.length,
-          CodeBuilder.hexadecimal,
+          CodeFactory.hexadecimal,
         );
         break;
       case CodeTypes.ALPHABETIC:
-        generatedCode = CodeBuilder.generateCode(
+        generatedCode = CodeFactory.generateCode(
           this.length,
-          CodeBuilder.alphatics,
+          CodeFactory.alphatics,
         );
         break;
       default:
-        generatedCode = CodeBuilder.generateCode(
+        generatedCode = CodeFactory.generateCode(
           this.length,
-          CodeBuilder.numbers,
+          CodeFactory.numbers,
         );
         break;
     }

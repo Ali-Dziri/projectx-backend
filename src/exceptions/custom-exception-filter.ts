@@ -26,11 +26,11 @@ export class CustomExceptionFilter implements ExceptionFilter {
       statusCode: httpStatus,
       type:
         exception instanceof HttpException
-          ? exception.name
+          ? (exception.getResponse() as Exception).type
           : EXCEPTIONS.SERVER_ERROR.type,
       message:
         exception instanceof HttpException
-          ? exception.message
+          ? (exception.getResponse() as Exception).message
           : EXCEPTIONS.SERVER_ERROR.message,
       path: httpAdapter.getRequestUrl(ctx.getRequest()) as string,
       timestamp: new Date().toISOString(),
