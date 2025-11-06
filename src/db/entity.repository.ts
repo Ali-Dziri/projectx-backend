@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import {
   AggregateOptions,
   Document,
@@ -12,12 +12,16 @@ import {
 import { CustomHttpException } from 'src/exceptions/custom-http-exception';
 import { EXCEPTIONS } from 'src/exceptions/exceptions-list';
 import { Options, PaginationType, AggregationPaginationResult } from './types';
+import { ApiResponse } from '@/common/types/api-response';
 
 export abstract class EntityRepository<T extends Document> {
   protected readonly logger = new Logger(EntityRepository.name);
   protected constructor(protected entityModel: Model<T>) {}
 
-  async findOne(filter: FilterQuery<T>, options?: Options): Promise<T | null> {
+  async findOne(
+    filter: FilterQuery<T>,
+    options?: Options,
+  ): Promise<ApiResponse<T> | null> {
     const { sort, projection, populate, limit, lean, session } = options || {};
     const query = this.entityModel.findOne(filter, projection);
     if (sort) query.sort(sort);
@@ -25,10 +29,17 @@ export abstract class EntityRepository<T extends Document> {
     if (populate) query.populate(populate);
     if (lean) query.lean();
     if (session) query.session(session);
-    return query.exec();
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: (await query.exec()) as T,
+    };
   }
 
-  find(filter: FilterQuery<T>, options?: Options): Promise<T[]> {
+  async find(
+    filter: FilterQuery<T>,
+    options?: Options,
+  ): Promise<ApiResponse<T[]>> {
     const { sort, projection, populate, skip, limit, lean, session } =
       options || {};
     const query = this.entityModel.find(filter, projection);
@@ -38,37 +49,71 @@ export abstract class EntityRepository<T extends Document> {
     if (limit) query.limit(limit);
     if (lean) query.lean();
     if (session) query.session(session);
-    return query.exec();
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: await query.exec(),
+    };
   }
 
-  create(createEntityData: Partial<T> | T, options?: SaveOptions): Promise<T> {
+  async create(
+    createEntityData: Partial<T> | T,
+    options?: SaveOptions,
+  ): Promise<ApiResponse<T>> {
     const entity = new this.entityModel(createEntityData);
-    return entity.save(options);
+    const result = await entity.save(options);
+    return {
+      statusCode: 201,
+      message: 'success',
+      data: result,
+    };
   }
 
-  updateOne(
+  async updateOne(
     filter: FilterQuery<T>,
     updateEntityData: UpdateQuery<T>,
     options?: Options,
-  ) {
-    return this.entityModel.updateOne(filter, updateEntityData, {
+  ): Promise<ApiResponse<T>> {
+    const result = await this.entityModel.updateOne(filter, updateEntityData, {
       ...options,
     });
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: result as unknown as T,
+    };
   }
 
-  insertMany(entitiesData: T[] | Partial<T>[] | unknown[]): Promise<T[]> {
-    return this.entityModel.insertMany(entitiesData);
+  async insertMany(
+    entitiesData: T[] | Partial<T>[] | unknown[],
+  ): Promise<ApiResponse<T[]>> {
+    const result = await this.entityModel.insertMany(entitiesData);
+    return {
+      statusCode: 201,
+      message: 'success',
+      data: result,
+    };
   }
 
-  findOneAndUpdate(
+  async findOneAndUpdate(
     filter: FilterQuery<T>,
     updateEntityData: UpdateQuery<T>,
     options?: Options,
-  ) {
-    return this.entityModel.findOneAndUpdate(filter, updateEntityData, {
-      new: true,
-      ...options,
-    });
+  ): Promise<ApiResponse<T>> {
+    const result = await this.entityModel.findOneAndUpdate(
+      filter,
+      updateEntityData,
+      {
+        new: true,
+        ...options,
+      },
+    );
+
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: result as T,
+    };
   }
 
   exists(filter: FilterQuery<T>) {
@@ -103,10 +148,9 @@ export abstract class EntityRepository<T extends Document> {
     pipeline: PipelineStage[],
     page = 1,
     limit = 10,
-  ): Promise<PaginationType<T>> {
+  ): Promise<ApiResponse<PaginationType<T>>> {
     try {
       const skip = (page - 1) * limit;
-
       const facetPipeline: PipelineStage[] = [
         ...pipeline,
         {
@@ -143,10 +187,14 @@ export abstract class EntityRepository<T extends Document> {
       const totalPages = Math.ceil(count / limit);
 
       return {
-        totalItems: count,
-        totalPages,
-        currentPage: page,
-        data,
+        statusCode: HttpStatus.OK,
+        message: 'success',
+        data: {
+          totalItems: count,
+          totalPages,
+          currentPage: page,
+          data,
+        },
       };
     } catch (error) {
       this.logger.error(`Unexpected error in pagination: ${error}`);

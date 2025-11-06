@@ -8,6 +8,7 @@ import { CustomValidatorPipe } from './exceptions/custom-validator-pipe';
 import { CustomExceptionFilter } from './exceptions/custom-exception-filter';
 import { MongooseExceptionFilter } from './exceptions/mongoose-exception-filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { CustomLogger } from './config/logger.config';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -45,7 +46,9 @@ async function bootstrap() {
     });
   }
 
-  const logger = new Logger('Main');
+  app.useLogger(new CustomLogger());
+
+  const logger = new Logger('Main', { timestamp: true });
   logger.verbose(
     `API started successfully, listening on port ${port}:: -> http://localhost:${port}/api`,
   );

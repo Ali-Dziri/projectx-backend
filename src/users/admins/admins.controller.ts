@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Request,
 } from '@nestjs/common';
 import { AdminsService } from './admins.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import type { UserType } from '@/common/types/users-types';
 
 @Controller('admins')
 export class AdminsController {
@@ -23,6 +25,12 @@ export class AdminsController {
   @Get()
   findAll() {
     return this.adminsService.findAll();
+  }
+
+  @Get('me')
+  findMe(@Request() { user }: { user: UserType }) {
+    console.log('user', user);
+    return this.adminsService.findMe(user.id);
   }
 
   @Get(':id')

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
@@ -21,8 +22,12 @@ export class BrandsController {
   }
 
   @Get()
-  findAll() {
-    return this.brandsService.findAll();
+  findAll(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('search') search: string,
+  ) {
+    return this.brandsService.findAll(page, limit, search);
   }
 
   @Get(':id')
@@ -37,6 +42,6 @@ export class BrandsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.brandsService.remove(+id);
+    return this.brandsService.remove(id);
   }
 }

@@ -4,7 +4,6 @@ import { UpdateModelDto } from './dto/update-model.dto';
 import { ModelRepository } from './models.repository';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
-import { ModelDocument } from './entities/model.entity';
 import { SlugifyFactory } from '@/utils/generators/slugify.service';
 import { BrandsRepository } from '../brands/brands.repository';
 @Injectable()
@@ -15,12 +14,12 @@ export class ModelsService {
     private readonly brandsRepository: BrandsRepository,
   ) {}
 
-  async create(createModelDto: CreateModelDto): Promise<ModelDocument> {
+  async create(createModelDto: CreateModelDto) {
     const existingModel = await this.modelRepository.findOne({
       name: createModelDto.name,
     });
 
-    if (existingModel) {
+    if (existingModel?.data) {
       throw new CustomHttpException(EXCEPTIONS.ALREADY_EXISTS);
     }
 
@@ -28,7 +27,7 @@ export class ModelsService {
       _id: createModelDto.brand,
     });
 
-    if (!brandExist) {
+    if (!brandExist?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'brand not found');
     }
 

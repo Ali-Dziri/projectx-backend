@@ -15,18 +15,23 @@ import {
 } from '@/common/types/auth-types';
 import { CodeGeneratorService } from '@/utils/generators/code-generators.service';
 import dayjs from 'dayjs';
-import { Request, Response } from 'express';
+import { Logger } from '@nestjs/common';
+
+type RefreshResponse = LoginResponse & {
+  newRefresh: boolean;
+};
 
 @Injectable()
 export class AuthService {
   private accessTokenOptions: JwtSignOptions = {
     algorithm: 'HS256',
-    expiresIn: '15m',
+    expiresIn: '15M',
   };
   private refreshTokenOptions: JwtSignOptions = {
     algorithm: 'HS256',
     expiresIn: '7d',
   };
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly adminRepository: AdminRepository,
     private readonly jwtService: JwtService,
@@ -37,13 +42,16 @@ export class AuthService {
   async validateAdmin(
     authCredentials: AuthCredentialsDto,
   ): Promise<AdminDocument> {
-    const admin = await this.adminRepository.findOne({
+    const result = await this.adminRepository.findOne({
       email: authCredentials.email,
       accountStatus: AdminAccountStatus.ACTIVE,
     });
-    if (!admin) {
+    if (!result) {
       throw new CustomHttpException(EXCEPTIONS.USER_NOT_FOUND);
     }
+
+    const admin = result.data;
+
     const isValidPassoword = await bcrypt.compare(
       authCredentials.password,
       admin.password,
@@ -58,48 +66,65 @@ export class AuthService {
   async login(authCredentials: AuthCredentialsDto): Promise<LoginResponse> {
     const admin = await this.validateAdmin(authCredentials);
 
+    if (!admin) {
+      throw new CustomHttpException(EXCEPTIONS.USER_NOT_FOUND);
+    }
+
     const payload: TokenGenerationPayload = {
       email: admin.email,
       sub: String(admin.id),
     };
     const accessToken = await this.createAccessToken(payload);
     const refreshToken = await this.createRefreshToken(payload);
-    const csrfSignature = this.generateCSRFSignature();
-    return { accessToken, refreshToken, csrfSignature };
+    const csrfToken = this.generateCSRFToken();
+    return { accessToken, refreshToken, csrfToken };
   }
 
-  async refresh(refreshToken: string): Promise<LoginResponse> {
+  async refresh(refreshToken: string): Promise<RefreshResponse> {
     if (!refreshToken) {
-      console.log('not ofund');
+      this.logger.error('refresh token not found');
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
     const extractedPayload: TokenGenerationPayload =
-      await this.jwtService.verifyAsync(refreshToken);
+      await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_SECRET,
+      });
 
     if (!extractedPayload) {
+      this.logger.error('error decoding token');
       throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
     }
 
-    const record = await this.refreshTokenRepository.findOne({
+    const result = await this.refreshTokenRepository.findOne({
       userId: extractedPayload.sub,
     });
 
-    if (!record) {
+    if (!result) {
+      this.logger.error('refresh token not found in db');
       throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
     }
+    const record = result.data;
+
     const isSame = await bcrypt.compare(
       refreshToken,
       record.hashedRefreshToken,
     );
     if (!isSame) {
+      this.logger.error('refresh is not valid');
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
 
+    const cleanPayload: TokenGenerationPayload = {
+      sub: extractedPayload.sub,
+      email: extractedPayload.email,
+    };
+
     if (dayjs(record.expiresIn).isAfter(dayjs())) {
       return {
-        accessToken: await this.createAccessToken(extractedPayload),
+        accessToken: await this.createAccessToken(cleanPayload),
         refreshToken,
-        csrfSignature: this.generateCSRFSignature(),
+        csrfToken: this.generateCSRFToken(),
+        newRefresh: false,
       };
     }
 
@@ -107,14 +132,15 @@ export class AuthService {
       _id: record._id,
     });
 
-    const newRefreshToken = await this.createRefreshToken(extractedPayload);
-    const newAccessToken = await this.createAccessToken(extractedPayload);
-    const csrfSignature = this.generateCSRFSignature();
+    const newRefreshToken = await this.createRefreshToken(cleanPayload);
+    const newAccessToken = await this.createAccessToken(cleanPayload);
+    const csrfToken = this.generateCSRFToken();
 
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      csrfSignature,
+      csrfToken,
+      newRefresh: true,
     };
   }
 
@@ -155,7 +181,7 @@ export class AuthService {
     return token;
   }
 
-  private generateCSRFSignature() {
+  private generateCSRFToken() {
     return this.codeGenerator
       .csrfFactory()
       .withRandomBytes(16, 'hex')

@@ -6,6 +6,12 @@ export type RefreshTokenDocument = HydratedDocument<RefreshToken>;
 @Schema({
   timestamps: true,
   versionKey: false,
+  toJSON: {
+    transform: (doc, ret) => {
+      const { _id, ...rest } = ret;
+      return { id: _id, ...rest };
+    },
+  },
 })
 export class RefreshToken {
   @Prop({ required: true, type: String })
