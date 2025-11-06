@@ -65,6 +65,30 @@ export class AdminsService {
     return admin;
   }
 
+  async findMe(userId: string) {
+    const result = await this.adminRepository.findOne({
+      _id: userId,
+      accountStatus: AdminAccountStatus.ACTIVE,
+    });
+
+    if (!result?.data) {
+      throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
+    }
+
+    return {
+      message: result.message,
+      statusCode: result.statusCode,
+      data: {
+        id: result.data._id,
+        email: result.data.email,
+        username: result.data.username,
+        firstname: result.data.firstname,
+        lastname: result.data.lastname,
+        phone: result.data.phone,
+      },
+    };
+  }
+
   update(id: number, updateAdminDto: UpdateAdminDto) {
     this.logger.log('updateAdminDto', updateAdminDto);
     return `This action updates a #${id}admin`;

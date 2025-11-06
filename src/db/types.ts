@@ -13,7 +13,7 @@ export type Options = {
 };
 
 export type PaginationType<T> = {
-  totalItems: any;
+  totalItems: number;
   totalPages: number;
   currentPage: number;
   data: T[];

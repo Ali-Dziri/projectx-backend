@@ -19,9 +19,9 @@ export class CSRFTokenGuard implements CanActivate {
       return true;
     }
     const request: Request = context.switchToHttp().getRequest();
-    const csrfSignatureHeader = request.headers['x-csrf-token'] as string;
-    const csrfSignatureCookie = request.cookies['csrfSignature'] as string;
+    const csrfTokenHeader = request.headers['x-csrf-token'] as string;
+    const csrfTokenCookie = request.cookies['csrfToken'] as string;
 
-    return csrfSignatureHeader === csrfSignatureCookie;
+    return csrfTokenHeader === csrfTokenCookie;
   }
 }

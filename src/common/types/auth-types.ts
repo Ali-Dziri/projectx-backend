@@ -6,5 +6,5 @@ export type TokenGenerationPayload = {
 export type LoginResponse = {
   accessToken: string;
   refreshToken: string;
-  csrfSignature: string;
+  csrfToken: string;
 };

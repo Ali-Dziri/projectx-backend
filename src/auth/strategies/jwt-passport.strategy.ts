@@ -7,6 +7,7 @@ import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
 import { Request } from 'express';
 import { Injectable } from '@nestjs/common';
+import { UserType } from '@/common/types/users-types';
 
 @Injectable()
 export class JwtPassportStrategy extends PassportStrategy(Strategy) {
@@ -28,23 +29,23 @@ export class JwtPassportStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { email: string; sub: string }) {
-    const user = await this.adminRepository.findOne({
+  async validate(payload: { email: string; sub: string }): Promise<UserType> {
+    const result = await this.adminRepository.findOne({
       _id: payload.sub,
       email: payload.email,
       accountStatus: AdminAccountStatus.ACTIVE,
     });
-    if (!user) {
+    if (!result?.data) {
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
+    const user = result.data;
     return {
-      id: user._id,
+      id: String(user._id),
       email: user.email,
       username: user.username,
       firstname: user.firstname,
       lastname: user.lastname,
       phone: user.phone,
-      accountStatus: user.accountStatus,
     };
   }
 }

@@ -3,7 +3,6 @@ import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { PartsRepository } from './parts.repository';
 import { CodeGeneratorService } from '@/utils/generators/code-generators.service';
-import { PartDocument } from './entities/part.entity';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
 import { SlugifyFactory } from '@/utils/generators/slugify.service';
@@ -19,25 +18,30 @@ export class PartsService {
     private readonly categoriesRepository: CategoriesRepository,
   ) {}
 
-  async create(createPartDto: CreatePartDto): Promise<PartDocument> {
+  async create(createPartDto: CreatePartDto) {
     const modelExist = await this.modelRepository.findOne({
       _id: createPartDto.modelId,
     });
 
-    if (!modelExist) {
+    if (!modelExist?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'model not found');
     }
 
-    const categoryExist = await this.categoriesRepository.findOne({
+    const model = modelExist.data;
+
+    const recordExist = await this.categoriesRepository.findOne({
       _id: createPartDto.categoryId,
     });
 
-    if (!categoryExist) {
+    if (!recordExist?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'category not found');
     }
+
+    const category = recordExist.data;
+
     const name = createPartDto.name
       ? createPartDto.name
-      : `${categoryExist.name}_${modelExist.name}`;
+      : `${category.name}_${model.name}`;
 
     const slugifiedName = this.slugifyFactory
       .withText(name)
@@ -78,7 +82,7 @@ export class PartsService {
       _id: id,
     });
 
-    if (!existingPart) {
+    if (!existingPart?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return this.partsRepository.updateOne(
