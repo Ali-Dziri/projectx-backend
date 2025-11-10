@@ -22,15 +22,18 @@ export class AuthController {
     @Body() authCredentials: AuthCredentialsDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<ApiResponse<{ csrfToken: string }>> {
-    const { accessToken, refreshToken, csrfToken } =
+    const { accessToken, refreshToken, csrfToken, newRefresh } =
       await this.authService.login(authCredentials);
 
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
-      sameSite: 'lax',
-    });
+    if (newRefresh) {
+      response.clearCookie('refreshToken');
+      response.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
+        sameSite: 'lax',
+      });
+    }
 
     response.cookie('accessToken', accessToken, {
       httpOnly: true,
@@ -67,7 +70,6 @@ export class AuthController {
       refreshToken: newRefreshToken,
       newRefresh,
     } = await this.authService.refresh(refreshToken);
-    console.log('newRefresh', newRefresh);
     response.clearCookie('accessToken');
     response.clearCookie('csrfToken');
     if (newRefresh) {

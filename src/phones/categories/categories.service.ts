@@ -5,9 +5,12 @@ import { CategoriesRepository } from './categories.repository';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
 import { SlugifyFactory } from '@/utils/generators/slugify.service';
+import { PipelineStage } from 'mongoose';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class CategoriesService {
+  private readonly logger = new Logger(CategoriesService.name);
   constructor(
     private readonly categoriesRepository: CategoriesRepository,
     private readonly slugifyFactory: SlugifyFactory,
@@ -18,7 +21,8 @@ export class CategoriesService {
       name: createCategoryDto.name,
     });
 
-    if (existingCategory) {
+    if (existingCategory?.data) {
+      this.logger.error('category already exists');
       throw new CustomHttpException(EXCEPTIONS.ALREADY_EXISTS);
     }
     const slug = this.slugifyFactory
@@ -30,12 +34,32 @@ export class CategoriesService {
     });
   }
 
-  findAll() {
-    return `This action returns all categories`;
-  }
+  async findAll(page: number, limit: number, search: string) {
+    const pipeline: PipelineStage[] = [
+      ...(search
+        ? [{ $match: { name: { $regex: search, $options: 'i' } } }]
+        : []),
+      {
+        $project: {
+          _id: 0,
+          id: '$_id',
+          name: 1,
+          description: 1,
+          slug: 1,
+        },
+      },
+    ];
+    const result = await this.categoriesRepository.aggregateWithPagination(
+      pipeline,
+      page,
+      limit,
+    );
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
+    if (!result) {
+      this.logger.error('error fetching categories');
+      throw new CustomHttpException(EXCEPTIONS.SERVER_ERROR);
+    }
+    return result;
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
@@ -44,6 +68,7 @@ export class CategoriesService {
     });
 
     if (!existingCategory) {
+      this.logger.error('category not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return this.categoriesRepository.updateOne(
@@ -54,7 +79,12 @@ export class CategoriesService {
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async remove(id: string) {
+    const category = await this.categoriesRepository.findOne({ _id: id });
+    if (!category?.data) {
+      this.logger.error('category not found');
+      throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
+    }
+    return this.categoriesRepository.deleteOne({ _id: id });
   }
 }

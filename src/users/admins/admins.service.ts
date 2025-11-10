@@ -5,12 +5,12 @@ import { CodeGeneratorService } from 'src/utils/generators/code-generators.servi
 import { AdminRepository } from './admins.repository';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
-import { Error as MongooseError } from 'mongoose';
+import { Error as MongooseError, PipelineStage } from 'mongoose';
 import { AdminAccountStatus } from '@/common/types/users-types';
 
 @Injectable()
 export class AdminsService {
-  logger = new Logger(AdminsService.name);
+  private readonly logger = new Logger(AdminsService.name);
   constructor(
     private readonly adminRepository: AdminRepository,
     private readonly codeGenerator: CodeGeneratorService,
@@ -37,32 +37,46 @@ export class AdminsService {
     return createdAdmin;
   }
 
-  async findAll() {
-    const admins = await this.adminRepository.aggregateWithPagination(
-      [
-        {
-          $match: {
-            accountStatus: {
-              $eq: AdminAccountStatus.PENDING,
-            },
+  async findAll(page: number, limit: number, search: string) {
+    const pipeline: PipelineStage[] = [
+      ...(search
+        ? [{ $match: { email: { $regex: search, $options: 'i' } } }]
+        : []),
+      {
+        $match: {
+          accountStatus: {
+            $eq: AdminAccountStatus.ACTIVE,
           },
         },
-      ],
-      1,
-      10,
+      },
+      {
+        $project: {
+          _id: 0,
+          id: '$_id',
+          email: 1,
+          username: 1,
+          accountStatus: 1,
+          phone: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ];
+    const admins = await this.adminRepository.aggregateWithPagination(
+      pipeline,
+      page,
+      limit,
     );
 
-    return admins;
-  }
-
-  async findOne(id: string) {
-    const admin = await this.adminRepository.findOne({
-      _id: id,
-    });
-    if (!admin) {
-      throw new MongooseError.DocumentNotFoundError('Admin not found');
+    if (!admins.data) {
+      this.logger.error('error fetching admins');
+      throw new CustomHttpException(EXCEPTIONS.SERVER_ERROR);
     }
-    return admin;
+
+    return admins;
   }
 
   async findMe(userId: string) {
@@ -72,6 +86,7 @@ export class AdminsService {
     });
 
     if (!result?.data) {
+      this.logger.error('Admin not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
 
@@ -89,12 +104,38 @@ export class AdminsService {
     };
   }
 
-  update(id: number, updateAdminDto: UpdateAdminDto) {
-    this.logger.log('updateAdminDto', updateAdminDto);
-    return `This action updates a #${id}admin`;
+  async update(id: number, updateAdminDto: UpdateAdminDto) {
+    const admin = await this.adminRepository.findOne({ _id: id });
+    if (!admin?.data) {
+      this.logger.error('Admin not found');
+      throw new MongooseError.DocumentNotFoundError('Admin not found');
+    }
+    const data: Partial<UpdateAdminDto> = {
+      firstname: updateAdminDto.firstname,
+      lastname: updateAdminDto.lastname,
+      username: updateAdminDto.username,
+      phone: updateAdminDto.phone,
+    };
+
+    const result = await this.adminRepository.updateOne(
+      { _id: id },
+      {
+        $set: data,
+      },
+    );
+    if (!result?.data) {
+      this.logger.error('Failed to update admin');
+      throw new CustomHttpException(EXCEPTIONS.SERVER_ERROR);
+    }
+    return result;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} admin`;
+  async remove(id: number) {
+    const admin = await this.adminRepository.findOne({ _id: id });
+    if (!admin?.data) {
+      this.logger.error('Admin not found');
+      throw new MongooseError.DocumentNotFoundError('Admin not found');
+    }
+    return this.adminRepository.deleteOne({ _id: id });
   }
 }

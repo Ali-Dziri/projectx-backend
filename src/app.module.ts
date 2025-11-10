@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -10,7 +10,7 @@ import { BrandsModule } from './phones/brands/brands.module';
 import { PartsModule } from './phones/parts/parts.module';
 import { ModelsModule } from './phones/models/models.module';
 import { CategoriesModule } from './phones/categories/categories.module';
-
+import { HttpMiddleware } from './middlewares/http.middleware';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,4 +29,8 @@ import { CategoriesModule } from './phones/categories/categories.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpMiddleware).forRoutes('*path');
+  }
+}

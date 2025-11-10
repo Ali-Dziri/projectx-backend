@@ -63,21 +63,42 @@ export class AuthService {
     return admin;
   }
 
-  async login(authCredentials: AuthCredentialsDto): Promise<LoginResponse> {
+  async login(authCredentials: AuthCredentialsDto): Promise<RefreshResponse> {
     const admin = await this.validateAdmin(authCredentials);
 
     if (!admin) {
       throw new CustomHttpException(EXCEPTIONS.USER_NOT_FOUND);
     }
 
+    const existingRefreshToken = await this.refreshTokenRepository.findOne({
+      userId: admin.id,
+    });
+
     const payload: TokenGenerationPayload = {
       email: admin.email,
       sub: String(admin.id),
     };
-    const accessToken = await this.createAccessToken(payload);
-    const refreshToken = await this.createRefreshToken(payload);
-    const csrfToken = this.generateCSRFToken();
-    return { accessToken, refreshToken, csrfToken };
+    if (!existingRefreshToken?.data) {
+      const accessToken = await this.createAccessToken(payload);
+      const refreshToken = await this.createRefreshToken(payload);
+      const csrfToken = this.generateCSRFToken();
+      return { accessToken, refreshToken, csrfToken, newRefresh: true };
+    }
+
+    const validRefreshToken = dayjs(
+      existingRefreshToken.data.expiresIn,
+    ).isAfter(dayjs());
+
+    if (validRefreshToken) {
+      const accessToken = await this.createAccessToken(payload);
+      const csrfToken = this.generateCSRFToken();
+      return { accessToken, csrfToken, newRefresh: false };
+    } else {
+      const accessToken = await this.createAccessToken(payload);
+      const refreshToken = await this.createRefreshToken(payload);
+      const csrfToken = this.generateCSRFToken();
+      return { accessToken, refreshToken, csrfToken, newRefresh: true };
+    }
   }
 
   async refresh(refreshToken: string): Promise<RefreshResponse> {
@@ -150,7 +171,7 @@ export class AuthService {
     if (!extractedPayload) {
       throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
     }
-    const result = await this.refreshTokenRepository.deleteOne({
+    const result = await this.refreshTokenRepository.deleteMany({
       userId: extractedPayload.sub,
     });
     if (result.deletedCount === 0) {

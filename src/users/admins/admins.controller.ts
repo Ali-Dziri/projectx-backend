@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Request,
+  Query,
 } from '@nestjs/common';
 import { AdminsService } from './admins.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
@@ -23,19 +24,17 @@ export class AdminsController {
   }
 
   @Get()
-  findAll() {
-    return this.adminsService.findAll();
+  findAll(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('search') search: string,
+  ) {
+    return this.adminsService.findAll(page, limit, search);
   }
 
   @Get('me')
   findMe(@Request() { user }: { user: UserType }) {
-    console.log('user', user);
     return this.adminsService.findMe(user.id);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.adminsService.findOne(id);
   }
 
   @Patch(':id')
