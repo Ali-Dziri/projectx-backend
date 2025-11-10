@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ModelsService } from './models.service';
 import { CreateModelDto } from './dto/create-model.dto';
@@ -21,13 +22,17 @@ export class ModelsController {
   }
 
   @Get()
-  findAll() {
-    return this.modelsService.findAll();
+  findAll(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('search') search: string,
+  ) {
+    return this.modelsService.findAll(page, limit, search);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.modelsService.findOne(+id);
+  @Get('/fields')
+  fields() {
+    return this.modelsService.fields();
   }
 
   @Patch(':id')
@@ -37,6 +42,6 @@ export class ModelsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.modelsService.remove(+id);
+    return this.modelsService.remove(id);
   }
 }
