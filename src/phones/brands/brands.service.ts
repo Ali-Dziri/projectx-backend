@@ -36,6 +36,11 @@ export class BrandsService {
           countryOfOrigin: 1,
         },
       },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
     ];
 
     const result =
