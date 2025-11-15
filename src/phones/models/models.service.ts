@@ -93,6 +93,11 @@ export class ModelsService {
           release_date: 1,
         },
       },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
     ];
     const result = await this.modelRepository.aggregateWithPagination(
       pipeline,

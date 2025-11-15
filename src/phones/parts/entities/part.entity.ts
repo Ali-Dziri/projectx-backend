@@ -8,6 +8,12 @@ export type PartDocument = HydratedDocument<Part>;
 @Schema({
   timestamps: true,
   versionKey: false,
+  toJSON: {
+    transform: (doc, ret) => {
+      const { _id, ...rest } = ret;
+      return { id: _id, ...rest };
+    },
+  },
 })
 export class Part {
   @Prop({ required: true, type: String })

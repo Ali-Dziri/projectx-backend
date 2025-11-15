@@ -48,6 +48,11 @@ export class CategoriesService {
           slug: 1,
         },
       },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
     ];
     const result = await this.categoriesRepository.aggregateWithPagination(
       pipeline,
