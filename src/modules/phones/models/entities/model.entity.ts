@@ -1,4 +1,4 @@
-import { Brand } from '@/phones/brands/entities/brand.entity';
+import { Brand } from '@/modules/phones/brands/entities/brand.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 

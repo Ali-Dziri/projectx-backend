@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { AdminRepository } from '@/users/admins/admins.repository';
-import { AdminDocument } from '@/users/admins/entities/admin.entity';
+import { AdminRepository } from '@/modules/users/admins/admins.repository';
+import { AdminDocument } from '@/modules/users/admins/entities/admin.entity';
 import bcrypt from 'bcryptjs';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
