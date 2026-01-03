@@ -1,7 +1,7 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { AdminRepository } from '@/users/admins/admins.repository';
+import { AdminRepository } from '@/modules/users/admins/admins.repository';
 import { AdminAccountStatus } from '@/common/types/users-types';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
 import { EXCEPTIONS } from '@/exceptions/exceptions-list';
