@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateBrandDto {
   @IsString()
@@ -6,10 +6,10 @@ export class CreateBrandDto {
   name: string;
 
   @IsUrl()
-  @IsNotEmpty()
+  @IsOptional()
   website: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   countryOfOrigin: string;
 }

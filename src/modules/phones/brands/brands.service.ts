@@ -12,6 +12,7 @@ import { Logger } from '@nestjs/common';
 export class BrandsService {
   private readonly logger = new Logger(BrandsService.name);
   constructor(private readonly brandsRepository: BrandsRepository) {}
+
   async create(createBrandDto: CreateBrandDto) {
     const existingBrand = await this.brandsRepository.findOne({
       name: createBrandDto.name,
@@ -68,7 +69,7 @@ export class BrandsService {
     if (!existingBrand?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
-    return this.brandsRepository.updateOne(
+    return await this.brandsRepository.updateOne(
       { _id: id },
       {
         $set: updateBrandDto,
@@ -84,6 +85,6 @@ export class BrandsService {
     if (!existingBrand?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
-    return this.brandsRepository.deleteOne({ _id: id });
+    return await this.brandsRepository.deleteOne({ _id: id });
   }
 }

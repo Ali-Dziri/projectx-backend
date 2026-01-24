@@ -193,7 +193,7 @@ export class PartsService {
     if (!existingPart?.data) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
-    return this.partsRepository.updateOne(
+    return await this.partsRepository.updateOne(
       { _id: id },
       {
         $set: updatePartDto,
@@ -201,7 +201,12 @@ export class PartsService {
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} part`;
+  async remove(id: string) {
+    const existingPart = await this.partsRepository.findOne({ _id: id });
+
+    if (!existingPart?.data) {
+      throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
+    }
+    return await this.partsRepository.deleteOne({ _id: id });
   }
 }

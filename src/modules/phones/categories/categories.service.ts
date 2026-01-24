@@ -28,7 +28,7 @@ export class CategoriesService {
     const slug = this.slugifyFactory
       .WithDefaultOption(createCategoryDto.name)
       .build();
-    return this.categoriesRepository.create({
+    return await this.categoriesRepository.create({
       ...createCategoryDto,
       slug,
     });
@@ -76,7 +76,7 @@ export class CategoriesService {
       this.logger.error('category not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
-    return this.categoriesRepository.updateOne(
+    return await this.categoriesRepository.updateOne(
       { _id: id },
       {
         $set: updateCategoryDto,
@@ -90,6 +90,6 @@ export class CategoriesService {
       this.logger.error('category not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
-    return this.categoriesRepository.deleteOne({ _id: id });
+    return await this.categoriesRepository.deleteOne({ _id: id });
   }
 }
