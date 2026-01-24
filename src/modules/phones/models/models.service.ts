@@ -139,7 +139,7 @@ export class ModelsService {
       brand: brand?.data._id,
     };
 
-    return this.modelRepository.updateOne(
+    return await this.modelRepository.updateOne(
       { _id: id },
       {
         $set: data,

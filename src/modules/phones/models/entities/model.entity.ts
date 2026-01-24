@@ -36,7 +36,7 @@ export class Model {
 
   @Prop({
     type: Date,
-    required: true,
+    required: false,
   })
   release_date: Date;
 }

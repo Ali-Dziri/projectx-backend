@@ -43,6 +43,6 @@ export class PartsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.partsService.remove(+id);
+    return this.partsService.remove(id);
   }
 }

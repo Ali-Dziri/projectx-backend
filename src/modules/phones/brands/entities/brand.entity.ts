@@ -24,7 +24,7 @@ export class Brand {
 
   @Prop({
     type: String,
-    required: true,
+    required: false,
   })
   website: string;
 

@@ -17,8 +17,11 @@ async function bootstrap() {
   const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get<number>('PORT');
   const apiVersion = configService.get<string>('API_VERSION');
+  const whilelist = configService.get<string>('ALLOWED_ORIGINS')?.split(',');
+  console.log('whitelist', whilelist);
   app.enableCors({
-    origin: true,
+    origin: whilelist || [],
+    // allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
   app.set('trust proxy', 1);
@@ -26,7 +29,13 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.useGlobalPipes(
-    new CustomValidatorPipe({ transform: true, whitelist: true }),
+    new CustomValidatorPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
   );
   const adatperHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(
