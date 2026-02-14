@@ -51,11 +51,13 @@ export class ModelsService {
       {},
       { projection: { _id: 1, name: 1 } },
     );
-
-    const data = {
-      brands: brands.data,
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        brands: brands.data,
+      },
     };
-    return data;
   }
 
   async findAll(page: number, limit: number, search: string) {
