@@ -11,8 +11,10 @@ import {
 import { ModelsService } from './models.service';
 import { CreateModelDto } from './dto/create-model.dto';
 import { UpdateModelDto } from './dto/update-model.dto';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 
 @Controller('models')
+@Public()
 export class ModelsController {
   constructor(private readonly modelsService: ModelsService) {}
 

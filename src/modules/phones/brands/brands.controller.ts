@@ -11,8 +11,10 @@ import {
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 
 @Controller('brands')
+@Public()
 export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 

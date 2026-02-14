@@ -20,11 +20,11 @@ import { ConfigService } from '@nestjs/config';
 export class AuthService {
   private accessTokenOptions: JwtSignOptions = {
     algorithm: 'HS256',
-    expiresIn: '15M',
+    expiresIn: '30d',
   };
   private refreshTokenOptions: JwtSignOptions = {
     algorithm: 'HS256',
-    expiresIn: '7d',
+    expiresIn: '30d',
   };
   private readonly logger = new Logger(AuthService.name);
   constructor(

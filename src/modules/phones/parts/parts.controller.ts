@@ -11,8 +11,10 @@ import {
 import { PartsService } from './parts.service';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 
 @Controller('parts')
+@Public()
 export class PartsController {
   constructor(private readonly partsService: PartsService) {}
   @Post()
