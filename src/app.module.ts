@@ -14,6 +14,7 @@ import { HttpMiddleware } from './middlewares/http.middleware';
 import { WebsiteModule } from './modules/website/website.module';
 import { AdminRepository } from './modules/users/admins/admins.repository';
 import { Logger } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -30,6 +31,14 @@ import { Logger } from '@nestjs/common';
     ModelsModule,
     CategoriesModule,
     WebsiteModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

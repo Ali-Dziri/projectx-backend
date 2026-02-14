@@ -42,4 +42,9 @@ export const EXCEPTIONS = {
     statusCode: HttpStatus.NOT_FOUND,
     message: 'User has not been found',
   },
+  REFRESH_TOKEN_WAS_NOT_FOUND: <Exception>{
+    type: 'REFRESH_TOKEN_WAS_NOT_FOUND',
+    statusCode: HttpStatus.EXPECTATION_FAILED,
+    message: 'Refresh token was not found',
+  },
 };

@@ -91,7 +91,11 @@ export class PartsService {
       models: models.data,
       categories: categories.data,
     };
-    return data;
+    return {
+      statusCode: 200,
+      message: 'success',
+      data,
+    };
   }
 
   async findAll(page: number, limit: number, search: string) {

@@ -9,17 +9,12 @@ import type { JwtSignOptions } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './refresh-token.repository';
 import { AdminAccountStatus } from '@/common/types/users-types';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
-import {
-  TokenGenerationPayload,
-  LoginResponse,
-} from '@/common/types/auth-types';
+import { TokenGenerationPayload } from '@/common/types/auth-types';
 import { CodeGeneratorService } from '@/utils/generators/code-generators.service';
 import dayjs from 'dayjs';
 import { Logger } from '@nestjs/common';
-
-type RefreshResponse = LoginResponse & {
-  newRefresh: boolean;
-};
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly codeGenerator: CodeGeneratorService,
+    private readonly configService: ConfigService,
   ) {}
 
   async validateAdmin(
@@ -63,14 +59,17 @@ export class AuthService {
     return admin;
   }
 
-  async login(authCredentials: AuthCredentialsDto): Promise<RefreshResponse> {
+  async login(
+    authCredentials: AuthCredentialsDto,
+    response: Response,
+  ): Promise<{ csrfToken: string }> {
     const admin = await this.validateAdmin(authCredentials);
 
     if (!admin) {
       throw new CustomHttpException(EXCEPTIONS.USER_NOT_FOUND);
     }
 
-    const existingRefreshToken = await this.refreshTokenRepository.findOne({
+    await this.refreshTokenRepository.deleteMany({
       userId: admin.id,
     });
 
@@ -78,34 +77,41 @@ export class AuthService {
       email: admin.email,
       sub: String(admin.id),
     };
-    if (!existingRefreshToken?.data) {
-      const accessToken = await this.createAccessToken(payload);
-      const refreshToken = await this.createRefreshToken(payload);
-      const csrfToken = this.generateCSRFToken();
-      return { accessToken, refreshToken, csrfToken, newRefresh: true };
-    }
 
-    const validRefreshToken = dayjs(
-      existingRefreshToken.data.expiresIn,
-    ).isAfter(dayjs());
+    const accessToken = await this.createAccessToken(payload);
+    const refreshToken = await this.createRefreshToken(payload);
+    const csrfToken = this.generateCSRFToken();
 
-    if (validRefreshToken) {
-      const accessToken = await this.createAccessToken(payload);
-      const csrfToken = this.generateCSRFToken();
-      return { accessToken, csrfToken, newRefresh: false };
-    } else {
-      const accessToken = await this.createAccessToken(payload);
-      const refreshToken = await this.createRefreshToken(payload);
-      const csrfToken = this.generateCSRFToken();
-      return { accessToken, refreshToken, csrfToken, newRefresh: true };
-    }
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
+      sameSite: 'lax',
+    });
+    response.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+      sameSite: 'lax',
+    });
+    response.cookie('csrfToken', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      sameSite: 'lax',
+    });
+
+    return { csrfToken };
   }
 
-  async refresh(refreshToken: string): Promise<RefreshResponse> {
+  async refresh(
+    refreshToken: string,
+    response: Response,
+  ): Promise<{ csrfToken: string }> {
     if (!refreshToken) {
       this.logger.error('refresh token not found');
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
+
     const extractedPayload: TokenGenerationPayload =
       await this.jwtService.verifyAsync(refreshToken, {
         secret: process.env.JWT_SECRET,
@@ -113,7 +119,7 @@ export class AuthService {
 
     if (!extractedPayload) {
       this.logger.error('error decoding token');
-      throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
+      throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
 
     const result = await this.refreshTokenRepository.findOne({
@@ -122,14 +128,19 @@ export class AuthService {
 
     if (!result) {
       this.logger.error('refresh token not found in db');
-      throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
+      response.clearCookie('refreshToken');
+      response.clearCookie('accessToken');
+      response.clearCookie('csrfToken');
+      throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
+
     const record = result.data;
 
     const isSame = await bcrypt.compare(
       refreshToken,
       record.hashedRefreshToken,
     );
+
     if (!isSame) {
       this.logger.error('refresh is not valid');
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
@@ -141,12 +152,20 @@ export class AuthService {
     };
 
     if (dayjs(record.expiresIn).isAfter(dayjs())) {
-      return {
-        accessToken: await this.createAccessToken(cleanPayload),
-        refreshToken,
-        csrfToken: this.generateCSRFToken(),
-        newRefresh: false,
-      };
+      const accessToken = await this.createAccessToken(cleanPayload);
+      const csrfToken = this.generateCSRFToken();
+      response.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'prod',
+        maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+        sameSite: 'lax',
+      });
+      response.cookie('csrfToken', csrfToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'prod',
+        sameSite: 'lax',
+      });
+      return { csrfToken };
     }
 
     await this.refreshTokenRepository.deleteOne({
@@ -157,26 +176,47 @@ export class AuthService {
     const newAccessToken = await this.createAccessToken(cleanPayload);
     const csrfToken = this.generateCSRFToken();
 
-    return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-      csrfToken,
-      newRefresh: true,
-    };
+    response.clearCookie('refreshToken');
+    response.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
+      sameSite: 'lax',
+    });
+    response.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+      sameSite: 'lax',
+    });
+    response.cookie('csrfToken', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      sameSite: 'lax',
+    });
+    return { csrfToken };
   }
 
-  async logout(refreshToken: string): Promise<boolean> {
-    const extractedPayload: TokenGenerationPayload =
-      await this.jwtService.verifyAsync(refreshToken);
-    if (!extractedPayload) {
-      throw new CustomHttpException(EXCEPTIONS.TOKEN_INVALID);
+  async logout(refreshToken: string, response: Response): Promise<boolean> {
+    if (refreshToken) {
+      const extractedPayload: TokenGenerationPayload =
+        await this.jwtService.verifyAsync(refreshToken);
+
+      if (!extractedPayload) {
+        this.logger.error('error decoding token');
+      }
+      const result = await this.refreshTokenRepository.deleteMany({
+        userId: extractedPayload.sub,
+      });
+
+      if (result.deletedCount === 0) {
+        this.logger.warn('refresh token not found in db');
+      }
     }
-    const result = await this.refreshTokenRepository.deleteMany({
-      userId: extractedPayload.sub,
-    });
-    if (result.deletedCount === 0) {
-      return false;
-    }
+
+    response.clearCookie('refreshToken');
+    response.clearCookie('accessToken');
+    response.clearCookie('csrfToken');
     return true;
   }
 
