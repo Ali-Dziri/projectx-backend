@@ -22,7 +22,7 @@ export class ModelsService {
       name: createModelDto.name,
     });
 
-    if (existingModel?.data) {
+    if (existingModel) {
       this.logger.error('model already exists');
       throw new CustomHttpException(EXCEPTIONS.ALREADY_EXISTS);
     }
@@ -31,7 +31,7 @@ export class ModelsService {
       _id: createModelDto.brand,
     });
 
-    if (!brandExist?.data) {
+    if (!brandExist) {
       this.logger.error('brand not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'brand not found');
     }
@@ -52,11 +52,7 @@ export class ModelsService {
       { projection: { _id: 1, name: 1 } },
     );
     return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        brands: brands.data,
-      },
+      brands,
     };
   }
 
@@ -120,7 +116,7 @@ export class ModelsService {
       _id: id,
     });
 
-    if (!existingModel?.data) {
+    if (!existingModel) {
       this.logger.error('model not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
@@ -130,7 +126,7 @@ export class ModelsService {
         _id: updateModelDto.brand,
       });
 
-      if (!brand?.data) {
+      if (!brand) {
         this.logger.error('brand not found');
         throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'brand not found');
       }
@@ -138,7 +134,7 @@ export class ModelsService {
 
     const data = {
       ...updateModelDto,
-      brand: brand?.data._id,
+      brand: brand?._id,
     };
 
     return await this.modelRepository.updateOne(
