@@ -62,7 +62,7 @@ export class AuthService {
   async login(
     authCredentials: AuthCredentialsDto,
     response: Response,
-  ): Promise<{ csrfToken: string }> {
+  ): Promise<string> {
     const admin = await this.validateAdmin(authCredentials);
 
     if (!admin) {
@@ -100,13 +100,10 @@ export class AuthService {
       sameSite: 'lax',
     });
 
-    return { csrfToken };
+    return csrfToken;
   }
 
-  async refresh(
-    refreshToken: string,
-    response: Response,
-  ): Promise<{ csrfToken: string }> {
+  async refresh(refreshToken: string, response: Response): Promise<string> {
     if (!refreshToken) {
       this.logger.error('refresh token not found');
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
@@ -165,7 +162,7 @@ export class AuthService {
         secure: process.env.NODE_ENV === 'prod',
         sameSite: 'lax',
       });
-      return { csrfToken };
+      return csrfToken;
     }
 
     await this.refreshTokenRepository.deleteOne({
@@ -194,7 +191,7 @@ export class AuthService {
       secure: process.env.NODE_ENV === 'prod',
       sameSite: 'lax',
     });
-    return { csrfToken };
+    return csrfToken;
   }
 
   async logout(refreshToken: string, response: Response): Promise<boolean> {
