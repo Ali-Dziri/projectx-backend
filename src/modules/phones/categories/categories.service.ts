@@ -21,7 +21,7 @@ export class CategoriesService {
       name: createCategoryDto.name,
     });
 
-    if (existingCategory?.data) {
+    if (existingCategory) {
       this.logger.error('category already exists');
       throw new CustomHttpException(EXCEPTIONS.ALREADY_EXISTS);
     }
@@ -86,7 +86,7 @@ export class CategoriesService {
 
   async remove(id: string) {
     const category = await this.categoriesRepository.findOne({ _id: id });
-    if (!category?.data) {
+    if (!category) {
       this.logger.error('category not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }

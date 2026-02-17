@@ -6,6 +6,7 @@ import {
 import { EXCEPTIONS } from './exceptions-list';
 import { Exception } from 'src/common/types/exception-types';
 import { CustomHttpException } from './custom-http-exception';
+
 export class CustomValidatorPipe extends ValidationPipe {
   public async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     try {

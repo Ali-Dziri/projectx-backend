@@ -1,7 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
 import { DbModule } from './db/db.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminsModule } from './modules/users/admins/admins.module';
@@ -15,13 +14,16 @@ import { WebsiteModule } from './modules/website/website.module';
 import { AdminRepository } from './modules/users/admins/admins.repository';
 import { Logger } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { CustomConfigModule } from './modules/custom-config/custom-config.module';
+import { CustomConfigService } from './modules/custom-config/custom-config.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: 'src/environments/.env',
-    }),
+    // ConfigModule.forRoot({
+    //   isGlobal: true,
+    //   envFilePath: 'src/environments/.env',
+    // }),
+    CustomConfigModule,
     DbModule,
     BrandsModule,
     AuthModule,
@@ -46,7 +48,10 @@ import { ThrottlerModule } from '@nestjs/throttler';
 export class AppModule implements NestModule {
   private readonly logger = new Logger(AppModule.name);
 
-  constructor(private readonly adminRepository: AdminRepository) {}
+  constructor(
+    private readonly adminRepository: AdminRepository,
+    private readonly config: CustomConfigService,
+  ) {}
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(HttpMiddleware).forRoutes('*path');
@@ -61,13 +66,13 @@ export class AppModule implements NestModule {
       email: process.env.SUPER_ADMIN_EMAIL,
     });
 
-    if (!admin?.data) {
+    if (!admin) {
       await this.adminRepository.create({
         firstname: 'admin',
         lastname: 'admin',
-        email: 'admin@projectx.com',
-        password: 'admin@projectx',
-        username: 'adminx',
+        email: this.config.get<string>('SUPER_ADMIN_EMAIL'),
+        password: this.config.get<string>('SUPER_ADMIN_PASSWORD'),
+        username: this.config.get<string>('SUPER_ADMIN_USERNAME'),
         phone: {
           code: '*213',
           number: '555555555',

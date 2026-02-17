@@ -3,11 +3,11 @@ import {
   MongooseModuleOptions,
   MongooseOptionsFactory,
 } from '@nestjs/mongoose';
-import { ConfigService } from '@nestjs/config';
+import { CustomConfigService } from '@/modules/custom-config/custom-config.service';
 
 @Injectable()
 export class MongooseConfigService implements MongooseOptionsFactory {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: CustomConfigService) {}
   createMongooseOptions(): MongooseModuleOptions {
     return {
       uri: this.configService.get<string>('DB_URI'),

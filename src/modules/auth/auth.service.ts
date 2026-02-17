@@ -14,7 +14,7 @@ import { CodeGeneratorService } from '@/utils/generators/code-generators.service
 import dayjs from 'dayjs';
 import { Logger } from '@nestjs/common';
 import type { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
+import { CustomConfigService } from '../custom-config/custom-config.service';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly codeGenerator: CodeGeneratorService,
-    private readonly configService: ConfigService,
+    private readonly config: CustomConfigService,
   ) {}
 
   async validateAdmin(
@@ -46,7 +46,7 @@ export class AuthService {
       throw new CustomHttpException(EXCEPTIONS.USER_NOT_FOUND);
     }
 
-    const admin = result.data;
+    const admin = result;
 
     const isValidPassoword = await bcrypt.compare(
       authCredentials.password,
@@ -85,13 +85,13 @@ export class AuthService {
     response.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
-      maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
+      maxAge: this.config.get('REFRESH_TOKEN_MAX_AGE'),
       sameSite: 'lax',
     });
     response.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
-      maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+      maxAge: this.config.get<number>('ACCESS_TOKEN_MAX_AGE'),
       sameSite: 'lax',
     });
     response.cookie('csrfToken', csrfToken, {
@@ -134,7 +134,7 @@ export class AuthService {
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
 
-    const record = result.data;
+    const record = result;
 
     const isSame = await bcrypt.compare(
       refreshToken,
@@ -157,7 +157,7 @@ export class AuthService {
       response.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'prod',
-        maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+        maxAge: this.config.get<number>('ACCESS_TOKEN_MAX_AGE'),
         sameSite: 'lax',
       });
       response.cookie('csrfToken', csrfToken, {
@@ -180,13 +180,13 @@ export class AuthService {
     response.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
-      maxAge: this.configService.get<number>('REFRESH_TOKEN_MAX_AGE'),
+      maxAge: this.config.get<number>('REFRESH_TOKEN_MAX_AGE'),
       sameSite: 'lax',
     });
     response.cookie('accessToken', newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
-      maxAge: this.configService.get<number>('ACCESS_TOKEN_MAX_AGE'),
+      maxAge: this.config.get<number>('ACCESS_TOKEN_MAX_AGE'),
       sameSite: 'lax',
     });
     response.cookie('csrfToken', csrfToken, {

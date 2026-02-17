@@ -85,28 +85,24 @@ export class AdminsService {
       accountStatus: AdminAccountStatus.ACTIVE,
     });
 
-    if (!result?.data) {
+    if (!result) {
       this.logger.error('Admin not found');
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
 
     return {
-      message: result.message,
-      statusCode: result.statusCode,
-      data: {
-        id: result.data._id,
-        email: result.data.email,
-        username: result.data.username,
-        firstname: result.data.firstname,
-        lastname: result.data.lastname,
-        phone: result.data.phone,
-      },
+      id: result._id,
+      email: result.email,
+      username: result.username,
+      firstname: result.firstname,
+      lastname: result.lastname,
+      phone: result.phone,
     };
   }
 
   async update(id: number, updateAdminDto: UpdateAdminDto) {
     const admin = await this.adminRepository.findOne({ _id: id });
-    if (!admin?.data) {
+    if (!admin) {
       this.logger.error('Admin not found');
       throw new MongooseError.DocumentNotFoundError('Admin not found');
     }
@@ -123,7 +119,7 @@ export class AdminsService {
         $set: data,
       },
     );
-    if (!result?.data) {
+    if (!result) {
       this.logger.error('Failed to update admin');
       throw new CustomHttpException(EXCEPTIONS.SERVER_ERROR);
     }
@@ -132,7 +128,7 @@ export class AdminsService {
 
   async remove(id: number) {
     const admin = await this.adminRepository.findOne({ _id: id });
-    if (!admin?.data) {
+    if (!admin) {
       this.logger.error('Admin not found');
       throw new MongooseError.DocumentNotFoundError('Admin not found');
     }

@@ -1,6 +1,6 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
+import { CustomConfigService } from '@/modules/custom-config/custom-config.service';
 import { AdminRepository } from '@/modules/users/admins/admins.repository';
 import { AdminAccountStatus } from '@/common/types/users-types';
 import { CustomHttpException } from '@/exceptions/custom-http-exception';
@@ -12,7 +12,7 @@ import { UserType } from '@/common/types/users-types';
 @Injectable()
 export class JwtPassportStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly CustomConfigService: CustomConfigService,
     private readonly adminRepository: AdminRepository,
   ) {
     super({
@@ -25,7 +25,7 @@ export class JwtPassportStrategy extends PassportStrategy(Strategy) {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') as string,
+      secretOrKey: CustomConfigService.get<string>('JWT_SECRET'),
     });
   }
 
@@ -35,10 +35,10 @@ export class JwtPassportStrategy extends PassportStrategy(Strategy) {
       email: payload.email,
       accountStatus: AdminAccountStatus.ACTIVE,
     });
-    if (!result?.data) {
+    if (!result) {
       throw new CustomHttpException(EXCEPTIONS.UNAUTHORIZED);
     }
-    const user = result.data;
+    const user = result;
     return {
       id: String(user._id),
       email: user.email,

@@ -2,7 +2,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { CustomConfigService } from './modules/custom-config/custom-config.service';
 import helmet from 'helmet';
 import { CustomValidatorPipe } from './exceptions/custom-validator-pipe';
 import { CustomExceptionFilter } from './exceptions/custom-exception-filter';
@@ -10,11 +10,12 @@ import { MongooseExceptionFilter } from './exceptions/mongoose-exception-filter'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { CustomLogger } from './config/logger.config';
 import cookieParser from 'cookie-parser';
+import { TransformInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const configService = app.get<ConfigService>(ConfigService);
+  const configService = app.get<CustomConfigService>(CustomConfigService);
   const port = configService.get<number>('PORT');
   const apiVersion = configService.get<string>('API_VERSION');
   const whilelist = configService.get<string>('ALLOWED_ORIGINS')?.split(',');
@@ -37,13 +38,14 @@ async function bootstrap() {
       },
     }),
   );
+  app.useGlobalInterceptors(new TransformInterceptor());
   const adatperHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(
     new MongooseExceptionFilter(adatperHost),
     new CustomExceptionFilter(adatperHost),
   );
 
-  if (configService.get<string>('NODE_ENV') === 'dev') {
+  if (!configService.isProd) {
     const config = new DocumentBuilder()
       .setTitle('Project X')
       .setDescription('API documentation for Project X')

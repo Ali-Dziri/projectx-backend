@@ -17,7 +17,7 @@ export class BrandsService {
     const existingBrand = await this.brandsRepository.findOne({
       name: createBrandDto.name,
     });
-    if (existingBrand?.data) {
+    if (existingBrand) {
       throw new CustomHttpException(EXCEPTIONS.ALREADY_EXISTS);
     }
     return this.brandsRepository.create(createBrandDto);
@@ -66,7 +66,7 @@ export class BrandsService {
       _id: id,
     });
 
-    if (!existingBrand?.data) {
+    if (!existingBrand) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return await this.brandsRepository.updateOne(
@@ -82,7 +82,7 @@ export class BrandsService {
       _id: id,
     });
 
-    if (!existingBrand?.data) {
+    if (!existingBrand) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return await this.brandsRepository.deleteOne({ _id: id });

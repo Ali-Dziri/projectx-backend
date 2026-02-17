@@ -25,21 +25,21 @@ export class PartsService {
       _id: createPartDto.modelId,
     });
 
-    if (!modelExist?.data) {
+    if (!modelExist) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'model not found');
     }
 
-    const model = modelExist.data;
+    const model = modelExist;
 
     const recordExist = await this.categoriesRepository.findOne({
       _id: createPartDto.categoryId,
     });
 
-    if (!recordExist?.data) {
+    if (!recordExist) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND, 'category not found');
     }
 
-    const category = recordExist.data;
+    const category = recordExist;
 
     const name = createPartDto.name
       ? createPartDto.name
@@ -87,14 +87,9 @@ export class PartsService {
       throw new CustomHttpException(EXCEPTIONS.SERVER_ERROR);
     }
 
-    const data = {
-      models: models.data,
-      categories: categories.data,
-    };
     return {
-      statusCode: 200,
-      message: 'success',
-      data,
+      models,
+      categories,
     };
   }
 
@@ -194,7 +189,7 @@ export class PartsService {
       _id: id,
     });
 
-    if (!existingPart?.data) {
+    if (!existingPart) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return await this.partsRepository.updateOne(
@@ -208,7 +203,7 @@ export class PartsService {
   async remove(id: string) {
     const existingPart = await this.partsRepository.findOne({ _id: id });
 
-    if (!existingPart?.data) {
+    if (!existingPart) {
       throw new CustomHttpException(EXCEPTIONS.NOT_FOUND);
     }
     return await this.partsRepository.deleteOne({ _id: id });
