@@ -15,7 +15,7 @@ export type BrandDocument = HydratedDocument<Brand>;
   },
 })
 export class Brand {
-  id?: string;
+  // id?: string;
   @Prop({
     type: String,
     required: true,
