@@ -1,0 +1,44 @@
+services:
+  app:
+    env_file:
+      - src/environments/.env
+    build:
+      context: .
+      target: production
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+    environment:
+      PORT: ${PORT:-3000}
+      #DB_URI: mongodb://mongo:27017/${DB_NAME}
+      DB_URI: ${DB_URI}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TOKEN_MAX_AGE: ${ACCESS_TOKEN_MAX_AGE:-900000}
+      REFRESH_TOKEN_MAX_AGE: ${REFRESH_TOKEN_MAX_AGE:-604800000}
+      API_VERSION: ${API_VERSION}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME}
+      NODE_ENV: ${NODE_ENV}
+    # depends_on:
+    #   mongo:
+    #     condition: service_healthy
+    restart: unless-stopped
+#   mongo:
+#     image: mongodb/mongodb-community-server:8.0-ubi8-slim
+#     environment:
+#       MONGODB_ALLOW_UNSUPPORTED_LINUX_KERNEL: '1'
+#     ports:
+#       - '27017:27017'
+#     volumes:
+#       - mongo_data:/data/db
+#     healthcheck:
+#       test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     restart: unless-stopped
+
+# volumes:
+#   mongo_data:
