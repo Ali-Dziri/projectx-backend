@@ -20,9 +20,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "docker:build": "docker compose --env-file src/environments/.env build",
     "docker:start": "docker compose --env-file src/environments/.env up -d",
-    "docker:down": "docker compose --env-file src/environments/.env down",
-    "docker:logs": "docker compose --env-file src/environments/.env logs -f app",
-    "docker:build-start": "docker compose --env-file src/environments/.env up --build"
+    "docker:stop": "docker compose --env-file src/environments/.env down",
+    "docker:logs": "docker compose --env-file src/environments/.env logs -f projectx-backend",
+    "docker:build-start": "docker compose --env-file src/environments/.env up --build -d"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

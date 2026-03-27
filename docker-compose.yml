@@ -1,5 +1,5 @@
 services:
-  app:
+  projectx-backend:
     env_file:
       - src/environments/.env
     build:
@@ -21,10 +21,15 @@ services:
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
       SUPER_ADMIN_USERNAME: ${SUPER_ADMIN_USERNAME}
       NODE_ENV: ${NODE_ENV}
+    networks:
+      - projectx-network
     # depends_on:
     #   mongo:
     #     condition: service_healthy
     restart: unless-stopped
+networks:
+  projectx-network:
+    external: true
 #   mongo:
 #     image: mongodb/mongodb-community-server:8.0-ubi8-slim
 #     environment:
